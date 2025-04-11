@@ -1,0 +1,47 @@
+<RCC>
+    <qresource prefix="/">
+        <file>Main.qml</file>
+        <file>meshes/object_0.mesh</file>
+        <file>meshes/object_1.mesh</file>
+        <file>meshes/object_10.mesh</file>
+        <file>meshes/object_11.mesh</file>
+        <file>meshes/object_12.mesh</file>
+        <file>meshes/object_13.mesh</file>
+        <file>meshes/object_14.mesh</file>
+        <file>meshes/object_15.mesh</file>
+        <file>meshes/object_16.mesh</file>
+        <file>meshes/object_17.mesh</file>
+        <file>meshes/object_18.mesh</file>
+        <file>meshes/object_19.mesh</file>
+        <file>meshes/object_2.mesh</file>
+        <file>meshes/object_20.mesh</file>
+        <file>meshes/object_21.mesh</file>
+        <file>meshes/object_22.mesh</file>
+        <file>meshes/object_23.mesh</file>
+        <file>meshes/object_24.mesh</file>
+        <file>meshes/object_25.mesh</file>
+        <file>meshes/object_26.mesh</file>
+        <file>meshes/object_27.mesh</file>
+        <file>meshes/object_28.mesh</file>
+        <file>meshes/object_29.mesh</file>
+        <file>meshes/object_3.mesh</file>
+        <file>meshes/object_30.mesh</file>
+        <file>meshes/object_31.mesh</file>
+        <file>meshes/object_32.mesh</file>
+        <file>meshes/object_33.mesh</file>
+        <file>meshes/object_34.mesh</file>
+        <file>meshes/object_35.mesh</file>
+        <file>meshes/object_36.mesh</file>
+        <file>meshes/object_37.mesh</file>
+        <file>meshes/object_38.mesh</file>
+        <file>meshes/object_39.mesh</file>
+        <file>meshes/object_4.mesh</file>
+        <file>meshes/object_40.mesh</file>
+        <file>meshes/object_5.mesh</file>
+        <file>meshes/object_6.mesh</file>
+        <file>meshes/object_7.mesh</file>
+        <file>meshes/object_8.mesh</file>
+        <file>meshes/object_9.mesh</file>
+        <file>AnyConv_com__su7.qml</file>
+    </qresource>
+</RCC>
