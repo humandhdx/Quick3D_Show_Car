@@ -47,6 +47,8 @@ Window {
             // 改进的方向控制系统
             property vector3d upVector: Qt.vector3d(0, 1, 0)
             property vector3d rightVector: Qt.vector3d(1, 0, 0)
+            property quaternion accumulatedRotation: Qt.quaternion(1, 0, 0, 0)
+            property bool isFirstMove: true
             
             // 计算实际旋转方向
             function calculateRotationDirection(mouseX, mouseY) {
@@ -67,26 +69,52 @@ Window {
                 
                 return Qt.vector2d(dx, dy)
             }
-
+            function normalizeQuaternion(q) {
+                var len = Math.sqrt(q.scalar*q.scalar + q.x*q.x + q.y*q.y + q.z*q.z)
+                if (len <= 0) return Qt.quaternion(1, 0, 0, 0)
+                return Qt.quaternion(q.scalar/len, q.x/len, q.y/len, q.z/len)
+            }
             // 改进的相机更新方法
             function updateCameraRotation(dx, dy) {
-                // 限制俯仰角
-                var newPitch = currentPitch + dy
-                if (newPitch >= minPitch && newPitch <= maxPitch) {
-                    currentPitch = newPitch
-                    var pitchRot = angleAxisToQuat(-dy, rightVector)
-                    currentRotation = multiplyQuaternion(pitchRot, currentRotation)
+                // 初始化时捕获当前旋转状态
+                if (isFirstMove) {
+                    accumulatedRotation = currentRotation
+                    isFirstMove = false
                 }
+
+                // 计算增量旋转
+                var yawRot = angleAxisToQuat(dx, Qt.vector3d(0, 1, 0))
+                var pitchRot = angleAxisToQuat(-dy, rotateVector(accumulatedRotation, Qt.vector3d(1, 0, 0)))
+
+                // 累积旋转量并规范化
+                accumulatedRotation = multiplyQuaternion(pitchRot, multiplyQuaternion(yawRot, accumulatedRotation))
+                accumulatedRotation = normalizeQuaternion(
+                            multiplyQuaternion(pitchRot,
+                            multiplyQuaternion(yawRot, accumulatedRotation))
+                        )
+
+                // 应用最终旋转
+                currentRotation = accumulatedRotation
+                // // 限制俯仰角
+                // var newPitch = currentPitch + dy
+                // if (newPitch >= minPitch && newPitch <= maxPitch) {
+                //     currentPitch = newPitch
+                //     var pitchRot = angleAxisToQuat(-dy, rightVector)
+                //     currentRotation = multiplyQuaternion(pitchRot, currentRotation)
+                // }
                 
-                // 应用水平旋转
-                var yawRot = angleAxisToQuat(dx, upVector)
-                currentRotation = multiplyQuaternion(yawRot, currentRotation)
+                // // 应用水平旋转
+                // var yawRot = angleAxisToQuat(dx, upVector)
+                // currentRotation = multiplyQuaternion(yawRot, currentRotation)
                 
-                // 保持相机朝向稳定
-                var forward = rotateVector(currentRotation, Qt.vector3d(0, 0, -1))
-                rightVector = forward.crossProduct(upVector).normalized()
+                // // 保持相机朝向稳定
+                // var forward = rotateVector(currentRotation, Qt.vector3d(0, 0, -1))
+                // rightVector = forward.crossProduct(upVector).normalized()
             }
-            
+            onPressed: (mouse) =>{
+                lastMousePos = Qt.point(mouse.x, mouse.y)
+                isFirstMove = true  // 每次重新开始拖动时重置
+            }
             onPositionChanged: (mouse) => {
                 var rotDir = calculateRotationDirection(mouse.x, mouse.y)
                 updateCameraRotation(rotDir.x, rotDir.y)
