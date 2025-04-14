@@ -30,7 +30,7 @@ Window {
         MouseArea {
             anchors.fill: parent
             // 1. 正确定义初始参数
-            property vector3d targetPosition: Qt.vector3d(0, 0.4, 0)
+            property vector3d targetPosition: Qt.vector3d(0, 0.6, 0)
             property real initialDistance: targetPosition.minus(Qt.vector3d(0, 0, -7)).length()
             property quaternion initialRotation: Qt.quaternion(1, 0, 0, 0)//Qt.quaternion(0.228173, -0.0493328, 0.95041, 0.205486)
 
@@ -40,8 +40,8 @@ Window {
             property point lastMousePos: Qt.point(0, 0)
 
             // 新增视角限制参数（单位：角度）
-            property real minPitch: -0 // 最低能看到前保险杠下缘
-            property real maxPitch: 45   // 最高能看到车顶
+            property real minPitch: 0 // 最低能看到前保险杠下缘
+            property real maxPitch: 45  // 最高能看到车顶
             property real currentPitch: 0 // 当前俯仰角
             
             // 改进的方向控制系统
@@ -76,40 +76,41 @@ Window {
             }
             // 改进的相机更新方法
             function updateCameraRotation(dx, dy) {
-                // 初始化时捕获当前旋转状态
                 if (isFirstMove) {
                     accumulatedRotation = currentRotation
                     isFirstMove = false
+
+                    // 初始化当前俯仰角
+                    var forward = rotateVector(accumulatedRotation, Qt.vector3d(0, 0, -1))
+                    currentPitch = Math.asin(forward.y) * (180/Math.PI)
                 }
 
-                // 计算增量旋转
+                // 1. 先处理水平旋转（不受限制）
                 var yawRot = angleAxisToQuat(dx, Qt.vector3d(0, 1, 0))
-                var pitchRot = angleAxisToQuat(-dy, rotateVector(accumulatedRotation, Qt.vector3d(1, 0, 0)))
+                accumulatedRotation = multiplyQuaternion(yawRot, accumulatedRotation)
 
-                // 累积旋转量并规范化
-                accumulatedRotation = multiplyQuaternion(pitchRot, multiplyQuaternion(yawRot, accumulatedRotation))
-                accumulatedRotation = normalizeQuaternion(
-                            multiplyQuaternion(pitchRot,
-                            multiplyQuaternion(yawRot, accumulatedRotation))
-                        )
+                // 2. 计算允许的俯仰旋转量
+                var requestedPitchChange = -dy
+                var newPitch = currentPitch + requestedPitchChange
 
-                // 应用最终旋转
+                // 动态钳制俯仰角变化
+                if (newPitch > maxPitch) {
+                    requestedPitchChange = maxPitch - currentPitch
+                } else if (newPitch < minPitch) {
+                    requestedPitchChange = minPitch - currentPitch
+                }
+
+                // 3. 应用受限制的俯仰旋转
+                if (Math.abs(requestedPitchChange) > 0.001) {
+                    var currentRight = rotateVector(accumulatedRotation, Qt.vector3d(1, 0, 0))
+                    var pitchRot = angleAxisToQuat(requestedPitchChange, currentRight)
+                    accumulatedRotation = multiplyQuaternion(pitchRot, accumulatedRotation)
+                    currentPitch += requestedPitchChange
+                }
+
+                // 4. 规范化并应用最终旋转
+                accumulatedRotation = normalizeQuaternion(accumulatedRotation)
                 currentRotation = accumulatedRotation
-                // // 限制俯仰角
-                // var newPitch = currentPitch + dy
-                // if (newPitch >= minPitch && newPitch <= maxPitch) {
-                //     currentPitch = newPitch
-                //     var pitchRot = angleAxisToQuat(-dy, rightVector)
-                //     currentRotation = multiplyQuaternion(pitchRot, currentRotation)
-                // }
-                
-                // // 应用水平旋转
-                // var yawRot = angleAxisToQuat(dx, upVector)
-                // currentRotation = multiplyQuaternion(yawRot, currentRotation)
-                
-                // // 保持相机朝向稳定
-                // var forward = rotateVector(currentRotation, Qt.vector3d(0, 0, -1))
-                // rightVector = forward.crossProduct(upVector).normalized()
             }
             onPressed: (mouse) =>{
                 lastMousePos = Qt.point(mouse.x, mouse.y)
