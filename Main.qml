@@ -40,8 +40,8 @@ Window {
             property point lastMousePos: Qt.point(0, 0)
 
             // 新增视角限制参数（单位：角度）
-            property real minPitch: 0 // 最低能看到前保险杠下缘
-            property real maxPitch: 45  // 最高能看到车顶
+            property real minPitch: -45 // 向下俯视最大角度（负值表示向下）
+            property real maxPitch: 0   // 向上仰视最大角度（正值表示向上）
             property real currentPitch: 0 // 当前俯仰角
             
             // 改进的方向控制系统
@@ -69,11 +69,13 @@ Window {
                 
                 return Qt.vector2d(dx, dy)
             }
+            
             function normalizeQuaternion(q) {
                 var len = Math.sqrt(q.scalar*q.scalar + q.x*q.x + q.y*q.y + q.z*q.z)
                 if (len <= 0) return Qt.quaternion(1, 0, 0, 0)
                 return Qt.quaternion(q.scalar/len, q.x/len, q.y/len, q.z/len)
             }
+            
             // 改进的相机更新方法
             function updateCameraRotation(dx, dy) {
                 if (isFirstMove) {
@@ -90,14 +92,16 @@ Window {
                 accumulatedRotation = multiplyQuaternion(yawRot, accumulatedRotation)
 
                 // 2. 计算允许的俯仰旋转量
-                var requestedPitchChange = -dy
+                var requestedPitchChange = -dy  // 注意这里的负号：向下移动鼠标应该向下看
                 var newPitch = currentPitch + requestedPitchChange
 
-                // 动态钳制俯仰角变化
-                if (newPitch > maxPitch) {
-                    requestedPitchChange = maxPitch - currentPitch
-                } else if (newPitch < minPitch) {
+                // 确保俯仰角在允许范围内 (minPitch < maxPitch)
+                if (newPitch < minPitch) {
                     requestedPitchChange = minPitch - currentPitch
+                    newPitch = minPitch
+                } else if (newPitch > maxPitch) {
+                    requestedPitchChange = maxPitch - currentPitch
+                    newPitch = maxPitch
                 }
 
                 // 3. 应用受限制的俯仰旋转
@@ -105,7 +109,7 @@ Window {
                     var currentRight = rotateVector(accumulatedRotation, Qt.vector3d(1, 0, 0))
                     var pitchRot = angleAxisToQuat(requestedPitchChange, currentRight)
                     accumulatedRotation = multiplyQuaternion(pitchRot, accumulatedRotation)
-                    currentPitch += requestedPitchChange
+                    currentPitch = newPitch  // 直接设置为计算后的新值，避免累积误差
                 }
 
                 // 4. 规范化并应用最终旋转
